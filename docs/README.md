@@ -1,6 +1,6 @@
 # Buzzword Bingo
 
-Another meeting. Another circle-back. Perfectly alignment
+Another meeting. Another circle-back. Perfect alignment.
 
 Buzzword Bingo is a daily board in your browser — a hobby that looks like note-taking. Mark cells as the jargon rolls in. Five in a row and you win. Spiritually, if not professionally.
 
