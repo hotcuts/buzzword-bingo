@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Version metadata
+        id: meta
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          UPDATED="$(date +%Y-%m-%d)"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "updated=${UPDATED}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          UPDATED: ${{ steps.meta.outputs.updated }}
+        run: make release VERSION="$VERSION" UPDATED="$UPDATED"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
+          body: |
+            bingo ${{ steps.meta.outputs.version }} (${{ steps.meta.outputs.updated }})
+
+            Supported platforms:
+            - macOS Apple Silicon (`bingo_darwin_arm64`)
+            - Linux amd64 (`bingo_linux_amd64`)
+            - Windows amd64 (`bingo_windows_amd64.exe`)
+          files: |
+            bingo_darwin_arm64
+            bingo_linux_amd64
+            bingo_windows_amd64.exe
+          fail_on_unmatched_files: true

@@ -1,0 +1,287 @@
+# Embedded default bingo terms. Prefer: bingo terms set <file>
+synergy
+circle back
+touch base
+low-hanging fruit
+move the needle
+bandwidth
+deep dive
+park that
+take this offline
+action items
+align on this
+boil the ocean
+drink from the firehose
+put a pin in it
+table that
+net-new
+at the end of the day
+going forward
+double-click on that
+shift left
+shift right
+right-size
+leverage
+ecosystem
+paradigm shift
+thought leadership
+best practices
+lessons learned
+stakeholder
+deliverable
+blocker
+dependency
+timeline slip
+scope creep
+MVP
+POC
+ROI
+KPI
+OKR
+north star
+swimlane
+deck
+slideware
+pre-read
+sync
+async
+standup
+retro
+sprint
+backlog
+grooming
+story points
+velocity
+burn down
+tech debt
+refactor
+hot fix
+rollback
+outage
+root cause
+postmortem
+blameless
+on-call
+pager
+SLO
+SLA
+latency
+throughput
+cache miss
+race condition
+null pointer
+works on my machine
+have you tried restarting
+legacy system
+greenfield
+brownfield
+lift and shift
+cloud native
+kubernetes
+container
+microservice
+monolith
+API gateway
+feature flag
+A/B test
+dark launch
+canary
+blue-green
+CI/CD
+pipeline
+merge conflict
+rebase
+squash
+LGTM
+nit
+bike shed
+yak shave
+rubber duck
+two-pizza team
+dogfood
+eat your own dogfood
+move fast
+break things
+disrupt
+innovate
+pivot
+scale
+viral
+growth hack
+funnel
+conversion
+engagement
+retention
+churn
+CAC
+LTV
+product-market fit
+go-to-market
+value prop
+use case
+persona
+user journey
+wireframe
+mockup
+pixel perfect
+above the fold
+call to action
+landing page
+newsletter
+all-hands
+town hall
+skip-level
+1:1
+performance review
+calibration
+PIP
+RTO
+WFH
+hybrid
+camera on
+you're on mute
+can you see my screen
+sorry I was on mute
+hard stop
+quick question
+quick sync
+drive-by
+drive alignment
+capacity
+headcount
+backfill
+hiring freeze
+runway
+burn rate
+board deck
+quarterly
+FYI
+EOD
+COB
+ASAP
+per my last email
+looping in
+thanks in advance
+bumping this
+gentle reminder
+any update
+ping
+nudge
+visibility
+transparency
+accountability
+ownership
+empower
+enable
+unblock
+pushback
+socialize
+cascade
+cascading
+trickle down
+bottom-up
+top-down
+cross-functional
+silo
+siloed
+org chart
+reorg
+matrixed
+dotted line
+solid line
+direct report
+people manager
+IC track
+staff plus
+principal
+distinguished
+fellow
+architect
+SME
+T-shaped
+full stack
+10x engineer
+rockstar
+ninja
+guru
+wizard
+unicorn
+culture fit
+culture add
+psychological safety
+growth mindset
+fail fast
+fail forward
+iterate
+ship it
+done is better than perfect
+perfect is the enemy of good
+good enough
+over-engineer
+under-engineer
+premature optimization
+not invented here
+build vs buy
+vendor lock-in
+single point of failure
+bus factor
+documentation
+tribal knowledge
+runbook
+playbook
+checklist
+template
+boilerplate
+copy-paste
+stackoverflow
+ChatGPT said
+AI-powered
+LLM
+prompt engineer
+hallucination
+token limit
+context window
+fine-tune
+RAG
+vector DB
+embedding
+zero-shot
+few-shot
+agentic
+copilot
+autocomplete
+pair programming
+mob programming
+code review
+design review
+architecture decision
+ADR
+RFC
+PRD
+spec
+requirements
+acceptance criteria
+definition of done
+definition of ready
+spike
+discovery
+research spike
+timebox
+estimate
+guess-timate
+planning poker
+fibonacci
+t-shirt size
+confidence
+risk
+mitigation
+contingency
+buffer
+padding
+sandbag
+stretch goal
+moonshot
+BHAG
+OKR stretch
+committed
+aspirational
