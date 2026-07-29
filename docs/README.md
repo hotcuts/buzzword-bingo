@@ -40,7 +40,7 @@ $env:VERSION = "v0.1.0"; irm https://raw.githubusercontent.com/hotcuts/buzzword-
 bingo play
 ```
 
-Opens today’s board in your browser. First launch (and after a full reset) walks through look, name, and buzzwords. Settings cover looks, light/dark mode, your name, and custom terms.
+Opens today’s board in your browser. First launch (and after a full reset) walks through look, name, and buzzwords. Settings cover looks, light/dark mode, your name, and custom terms. If a newer release is available, play may print a one-line hint to run `bingo update` — it never blocks the game.
 
 ## Update
 

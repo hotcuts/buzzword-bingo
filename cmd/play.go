@@ -16,6 +16,8 @@ import (
 	"bingo/internal/server"
 	"bingo/internal/session"
 	"bingo/internal/terms"
+	"bingo/internal/updatecheck"
+	"bingo/internal/version"
 
 	"github.com/spf13/cobra"
 )
@@ -35,6 +37,7 @@ func runPlay(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	go updatecheck.MaybeNotify(version.Version)
 
 	pool, err := terms.Load(cfg)
 	if err != nil {
