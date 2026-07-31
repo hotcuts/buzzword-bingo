@@ -11,8 +11,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:     "bingo",
-	Short:   "Play daily bingo in your browser",
-	Long:    "bingo serves a daily bingo board in your browser with persistent local state.",
+	Short:   "Play bingo in your browser",
+	Long:    "bingo serves a bingo board in your browser with persistent local state. Boards reset daily or each ISO week.",
 	Version: version.Version,
 }
 

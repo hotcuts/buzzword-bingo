@@ -1,3 +1,5 @@
+export type ResetPeriod = 'daily' | 'weekly'
+
 export type GameState = {
   name: string
   date: string
@@ -5,6 +7,7 @@ export type GameState = {
   marked: boolean[]
   won: boolean
   winCount: number
+  period: ResetPeriod
 }
 
 export type TermsInfo = {
@@ -89,6 +92,16 @@ export async function setName(name: string): Promise<GameState> {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
+    }),
+  )
+}
+
+export async function setPeriod(period: ResetPeriod): Promise<GameState> {
+  return json(
+    await fetch('/api/period', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ period }),
     }),
   )
 }

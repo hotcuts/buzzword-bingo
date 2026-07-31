@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"bingo/internal/config"
+	"bingo/internal/profile"
 	"bingo/internal/server"
 	"bingo/internal/session"
 	"bingo/internal/terms"
@@ -28,7 +29,7 @@ func init() {
 
 var playCmd = &cobra.Command{
 	Use:   "play",
-	Short: "Start today's bingo game in the browser",
+	Short: "Start bingo in the browser",
 	RunE:  runPlay,
 }
 
@@ -44,8 +45,13 @@ func runPlay(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	period, err := profile.GetPeriod(cfg)
+	if err != nil {
+		return err
+	}
+
 	store := session.NewStore(cfg)
-	game, err := store.LoadOrCreate(pool)
+	game, err := store.LoadOrCreate(pool, period)
 	if err != nil {
 		return err
 	}

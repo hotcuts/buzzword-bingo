@@ -1,12 +1,12 @@
 import { useId, useState } from 'react'
-import type { GameState } from './api'
-import { replaceTerms, resetBoard, setName } from './api'
+import type { GameState, ResetPeriod } from './api'
+import { replaceTerms, resetBoard, setName, setPeriod } from './api'
 import { LOOKS, type Look, type Theme } from './theme'
 import { parseTermsText } from './utils'
 
 const MIN_TERMS = 24
 
-type Step = 'appearance' | 'name' | 'buzzwords'
+type Step = 'appearance' | 'name' | 'period' | 'buzzwords'
 type TermsChoice = 'defaults' | 'custom'
 
 type OnboardingOverlayProps = {
@@ -20,6 +20,7 @@ type OnboardingOverlayProps = {
 const STEPS: readonly { id: Step; label: string }[] = [
   { id: 'appearance', label: 'Look' },
   { id: 'name', label: 'Name' },
+  { id: 'period', label: 'Reset' },
   { id: 'buzzwords', label: 'Words' },
 ]
 
@@ -33,6 +34,7 @@ export function OnboardingOverlay({
   const titleId = useId()
   const [step, setStep] = useState<Step>('appearance')
   const [nameDraft, setNameDraft] = useState('')
+  const [periodChoice, setPeriodChoice] = useState<ResetPeriod>('daily')
   const [termsChoice, setTermsChoice] = useState<TermsChoice>('defaults')
   const [pasteText, setPasteText] = useState('')
   const [error, setError] = useState('')
@@ -52,15 +54,19 @@ export function OnboardingOverlay({
         setError('Enter a display name to continue.')
         return
       }
-      setStep('buzzwords')
+      setStep('period')
       return
+    }
+    if (step === 'period') {
+      setStep('buzzwords')
     }
   }
 
   function goBack() {
     setError('')
     if (step === 'name') setStep('appearance')
-    else if (step === 'buzzwords') setStep('name')
+    else if (step === 'period') setStep('name')
+    else if (step === 'buzzwords') setStep('period')
   }
 
   async function finish() {
@@ -82,7 +88,8 @@ export function OnboardingOverlay({
 
     setBusy(true)
     try {
-      let next = await setName(name)
+      await setName(name)
+      let next = await setPeriod(periodChoice)
       if (termsChoice === 'custom') {
         const parsed = parseTermsText(pasteText)
         await replaceTerms(parsed)
@@ -193,6 +200,36 @@ export function OnboardingOverlay({
                   required
                   disabled={busy}
                 />
+              </div>
+            </section>
+          )}
+
+          {step === 'period' && (
+            <section className="settings-section">
+              <p className="section-lead">How often should a new board appear?</p>
+              <div className="look-grid" role="radiogroup" aria-label="Board reset period">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={periodChoice === 'daily'}
+                  className={periodChoice === 'daily' ? 'look-card active' : 'look-card'}
+                  onClick={() => setPeriodChoice('daily')}
+                  disabled={busy}
+                >
+                  <span className="look-card-title">Daily</span>
+                  <span className="look-card-blurb">Fresh board every calendar day.</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={periodChoice === 'weekly'}
+                  className={periodChoice === 'weekly' ? 'look-card active' : 'look-card'}
+                  onClick={() => setPeriodChoice('weekly')}
+                  disabled={busy}
+                >
+                  <span className="look-card-title">Weekly</span>
+                  <span className="look-card-blurb">New board each Monday (ISO week).</span>
+                </button>
               </div>
             </section>
           )}

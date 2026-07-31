@@ -15,6 +15,7 @@ type Config struct {
 	TermsPath   string
 	SessionPath string
 	WinsPath    string
+	PeriodPath  string
 }
 
 // Ensure creates ~/.config/bingo with mode 0700 and returns paths.
@@ -36,13 +37,14 @@ func Ensure() (*Config, error) {
 		TermsPath:   filepath.Join(dir, "terms.txt"),
 		SessionPath: filepath.Join(dir, "session.json"),
 		WinsPath:    filepath.Join(dir, "wins.json"),
+		PeriodPath:  filepath.Join(dir, "period"),
 	}, nil
 }
 
-// ResetAll removes local bingo config files (name, terms, session, wins).
+// ResetAll removes local bingo config files (name, terms, session, wins, period).
 // The config directory itself is kept with mode 0700.
 func ResetAll(cfg *Config) error {
-	paths := []string{cfg.NamePath, cfg.TermsPath, cfg.SessionPath, cfg.WinsPath}
+	paths := []string{cfg.NamePath, cfg.TermsPath, cfg.SessionPath, cfg.WinsPath, cfg.PeriodPath}
 	for _, p := range paths {
 		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("remove %s: %w", p, err)

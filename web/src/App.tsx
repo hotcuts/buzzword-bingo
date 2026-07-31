@@ -12,7 +12,7 @@ import {
   type Look,
   type Theme,
 } from './theme'
-import { formatDate, hasSelections } from './utils'
+import { formatPeriodLabel, hasSelections } from './utils'
 
 export default function App() {
   const [state, setState] = useState<GameState | null>(null)
@@ -83,8 +83,8 @@ export default function App() {
             {state && !needsOnboarding && (
               <div className="meta">
                 <div className="meta-item">
-                  <span className="meta-label">Date</span>
-                  <span className="meta-value">{formatDate(state.date)}</span>
+                  <span className="meta-label">{state.period === 'weekly' ? 'Week' : 'Date'}</span>
+                  <span className="meta-value">{formatPeriodLabel(state.date, state.period)}</span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Wins</span>

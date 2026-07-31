@@ -18,7 +18,7 @@ const (
 	FreeLabel  = "FREE"
 )
 
-// Game is today's bingo board and mark state.
+// Game is the bingo board and mark state for the current period.
 type Game struct {
 	Date   string   `json:"date"`
 	Cells  []string `json:"cells"`
@@ -40,6 +40,7 @@ type State struct {
 	Marked   []bool   `json:"marked"`
 	Won      bool     `json:"won"`
 	WinCount int      `json:"winCount"`
+	Period   string   `json:"period"`
 }
 
 // Store persists session and wins under the config directory.
@@ -51,17 +52,13 @@ func NewStore(cfg *config.Config) *Store {
 	return &Store{cfg: cfg}
 }
 
-func today() string {
-	return time.Now().Format("2006-01-02")
-}
-
-// LoadOrCreate returns today's session, creating a new board if needed.
-func (s *Store) LoadOrCreate(pool []string) (*Game, error) {
-	date := today()
-	if g, err := s.readSession(); err == nil && g.Date == date && len(g.Cells) == CellCount && len(g.Marked) == CellCount {
+// LoadOrCreate returns the session for the current period, creating a new board if needed.
+func (s *Store) LoadOrCreate(pool []string, period profile.Period) (*Game, error) {
+	key := PeriodKey(period)
+	if g, err := s.readSession(); err == nil && g.Date == key && len(g.Cells) == CellCount && len(g.Marked) == CellCount {
 		return g, nil
 	}
-	g, err := newGame(date, pool)
+	g, err := newGame(key, pool)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +94,7 @@ func newGame(date string, pool []string) (*Game, error) {
 }
 
 // ToggleMark flips a cell (center stays marked), checks win, persists.
-func (s *Store) ToggleMark(g *Game, index int) (*State, error) {
+func (s *Store) ToggleMark(g *Game, index int, period profile.Period) (*State, error) {
 	if index < 0 || index >= CellCount {
 		return nil, fmt.Errorf("cell index out of range: %d", index)
 	}
@@ -109,7 +106,7 @@ func (s *Store) ToggleMark(g *Game, index int) (*State, error) {
 
 	if !g.Won && isBingo(g.Marked) {
 		g.Won = true
-		if err := s.recordWin(g.Date); err != nil {
+		if err := s.recordWin(CalendarDay()); err != nil {
 			return nil, err
 		}
 	}
@@ -117,17 +114,17 @@ func (s *Store) ToggleMark(g *Game, index int) (*State, error) {
 	if err := s.writeSession(g); err != nil {
 		return nil, err
 	}
-	return s.State(g)
+	return s.State(g, period)
 }
 
-// ResetTally reshuffles today's board from the term pool and clears marks/won.
+// ResetTally reshuffles the current board from the term pool and clears marks/won.
 // Wins history is left unchanged.
-func (s *Store) ResetTally(g *Game, pool []string) (*State, error) {
-	date := g.Date
-	if date == "" {
-		date = today()
+func (s *Store) ResetTally(g *Game, pool []string, period profile.Period) (*State, error) {
+	key := g.Date
+	if key == "" {
+		key = PeriodKey(period)
 	}
-	next, err := newGame(date, pool)
+	next, err := newGame(key, pool)
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +132,24 @@ func (s *Store) ResetTally(g *Game, pool []string) (*State, error) {
 	if err := s.writeSession(g); err != nil {
 		return nil, err
 	}
-	return s.State(g)
+	return s.State(g, period)
 }
 
-// State builds the UI state including win count and player name.
-func (s *Store) State(g *Game) (*State, error) {
+// RetagForPeriod updates the board's period key to match period without reshuffling
+// cells or clearing marks. Used when the player changes daily/weekly preference.
+func (s *Store) RetagForPeriod(g *Game, period profile.Period) (*State, error) {
+	key := PeriodKey(period)
+	if g.Date != key {
+		g.Date = key
+		if err := s.writeSession(g); err != nil {
+			return nil, err
+		}
+	}
+	return s.State(g, period)
+}
+
+// State builds the UI state including win count, player name, and reset period.
+func (s *Store) State(g *Game, period profile.Period) (*State, error) {
 	wins, err := s.readWins()
 	if err != nil {
 		return nil, err
@@ -155,6 +165,7 @@ func (s *Store) State(g *Game) (*State, error) {
 		Marked:   g.Marked,
 		Won:      g.Won,
 		WinCount: wins.total(),
+		Period:   string(period),
 	}, nil
 }
 

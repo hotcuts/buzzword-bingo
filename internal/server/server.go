@@ -36,6 +36,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("PUT /api/terms", s.handleTermsReplace)
 	mux.HandleFunc("POST /api/terms/reset", s.handleTermsReset)
 	mux.HandleFunc("PUT /api/name", s.handleName)
+	mux.HandleFunc("PUT /api/period", s.handlePeriod)
 	mux.HandleFunc("POST /api/reset-all", s.handleResetAll)
 
 	sub, err := fs.Sub(staticFiles, "static")
@@ -46,10 +47,36 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
+func (s *Server) period() (profile.Period, error) {
+	return profile.GetPeriod(s.cfg)
+}
+
+// ensureCurrentGame reloads the board if the stored period key is stale.
+func (s *Server) ensureCurrentGame(period profile.Period) error {
+	if s.game != nil && s.game.Date == session.PeriodKey(period) {
+		return nil
+	}
+	game, err := s.store.LoadOrCreate(s.pool, period)
+	if err != nil {
+		return err
+	}
+	*s.game = *game
+	return nil
+}
+
 func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	st, err := s.store.State(s.game)
+	period, err := s.period()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := s.ensureCurrentGame(period); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	st, err := s.store.State(s.game, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -70,7 +97,16 @@ func (s *Server) handleMark(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	st, err := s.store.ToggleMark(s.game, req.Index)
+	period, err := s.period()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := s.ensureCurrentGame(period); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	st, err := s.store.ToggleMark(s.game, req.Index, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -81,7 +117,16 @@ func (s *Server) handleMark(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleReset(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	st, err := s.store.ResetTally(s.game, s.pool)
+	period, err := s.period()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := s.ensureCurrentGame(period); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	st, err := s.store.ResetTally(s.game, s.pool, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -196,7 +241,44 @@ func (s *Server) handleName(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	st, err := s.store.State(s.game)
+	period, err := s.period()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	st, err := s.store.State(s.game, period)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, st)
+}
+
+type periodRequest struct {
+	Period string `json:"period"`
+}
+
+func (s *Server) handlePeriod(w http.ResponseWriter, r *http.Request) {
+	var req periodRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	period, err := profile.ParsePeriod(req.Period)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := profile.SetPeriod(s.cfg, period); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Keep the current board; only retag its period key so rollover checks stay correct.
+	st, err := s.store.RetagForPeriod(s.game, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -216,13 +298,14 @@ func (s *Server) handleResetAll(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	game, err := s.store.LoadOrCreate(s.pool)
+	period := profile.PeriodDaily
+	game, err := s.store.LoadOrCreate(s.pool, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	*s.game = *game
-	st, err := s.store.State(s.game)
+	st, err := s.store.State(s.game, period)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

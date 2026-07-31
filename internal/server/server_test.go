@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"bingo/internal/config"
+	"bingo/internal/profile"
 	"bingo/internal/server"
 	"bingo/internal/session"
 	"bingo/internal/terms"
@@ -24,6 +25,7 @@ func testConfig(t *testing.T) *config.Config {
 		TermsPath:   filepath.Join(dir, "terms.txt"),
 		SessionPath: filepath.Join(dir, "session.json"),
 		WinsPath:    filepath.Join(dir, "wins.json"),
+		PeriodPath:  filepath.Join(dir, "period"),
 	}
 }
 
@@ -34,7 +36,7 @@ func TestAPIs(t *testing.T) {
 		t.Fatal(err)
 	}
 	store := session.NewStore(cfg)
-	game, err := store.LoadOrCreate(pool)
+	game, err := store.LoadOrCreate(pool, profile.PeriodDaily)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +48,15 @@ func TestAPIs(t *testing.T) {
 	h.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/api/state", nil))
 	if res.Code != 200 {
 		t.Fatalf("state: %d %s", res.Code, res.Body.String())
+	}
+	var stateResp struct {
+		Period string `json:"period"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &stateResp); err != nil {
+		t.Fatal(err)
+	}
+	if stateResp.Period != "daily" {
+		t.Fatalf("state period = %q, want daily", stateResp.Period)
 	}
 
 	// Index HTML embedded
@@ -93,6 +104,33 @@ func TestAPIs(t *testing.T) {
 	h.ServeHTTP(res, req)
 	if res.Code != 200 {
 		t.Fatalf("name: %d %s", res.Code, res.Body.String())
+	}
+
+	// Period — preference change must not reshuffle the board
+	beforeCells := append([]string(nil), game.Cells...)
+	body, _ = json.Marshal(map[string]string{"period": "weekly"})
+	res = httptest.NewRecorder()
+	h.ServeHTTP(res, httptest.NewRequest(http.MethodPut, "/api/period", bytes.NewReader(body)))
+	if res.Code != 200 {
+		t.Fatalf("period: %d %s", res.Code, res.Body.String())
+	}
+	var periodResp struct {
+		Period string   `json:"period"`
+		Cells  []string `json:"cells"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &periodResp); err != nil {
+		t.Fatal(err)
+	}
+	if periodResp.Period != "weekly" {
+		t.Fatalf("period response = %q, want weekly", periodResp.Period)
+	}
+	if len(periodResp.Cells) != len(beforeCells) {
+		t.Fatalf("period change altered cell count")
+	}
+	for i := range beforeCells {
+		if periodResp.Cells[i] != beforeCells[i] {
+			t.Fatalf("period change reshuffled board at %d: %q -> %q", i, beforeCells[i], periodResp.Cells[i])
+		}
 	}
 
 	// Reset terms
