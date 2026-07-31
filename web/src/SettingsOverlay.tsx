@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import type { GameState, TermsInfo } from './api'
+import type { GameState, ResetPeriod, TermsInfo } from './api'
 import {
   addTerms,
   fetchTerms,
@@ -9,6 +9,7 @@ import {
   resetBoard,
   resetTerms,
   setName,
+  setPeriod,
 } from './api'
 import { LOOKS, type Look, type Theme } from './theme'
 import { parseTermsText } from './utils'
@@ -51,6 +52,8 @@ export function SettingsOverlay({
   const [nameDraft, setNameDraft] = useState(state.name)
   const [nameError, setNameError] = useState('')
   const [nameBusy, setNameBusy] = useState(false)
+  const [periodBusy, setPeriodBusy] = useState(false)
+  const [periodError, setPeriodError] = useState('')
   const [dangerError, setDangerError] = useState('')
   const [dangerBusy, setDangerBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -61,6 +64,7 @@ export function SettingsOverlay({
     setSection('appearance')
     setTermsError('')
     setNameError('')
+    setPeriodError('')
     setDangerError('')
     setShowImport(false)
     setImportText('')
@@ -380,7 +384,7 @@ export function SettingsOverlay({
 
           {section === 'player' && (
             <section className="settings-section">
-              <p className="section-lead">Display name shown above the board.</p>
+              <p className="section-lead">Display name and how often the board resets.</p>
               {nameError && <p className="error-banner">{nameError}</p>}
               <form
                 className="stack-form"
@@ -414,12 +418,50 @@ export function SettingsOverlay({
                   Save name
                 </button>
               </form>
+
+              <div>
+                <p className="field-label" id="period-label">
+                  Board resets
+                </p>
+                {periodError && <p className="error-banner">{periodError}</p>}
+                <div className="look-grid" role="radiogroup" aria-labelledby="period-label">
+                  {(
+                    [
+                      ['daily', 'Daily', 'Fresh board every calendar day.'],
+                      ['weekly', 'Weekly', 'New board each Monday (ISO week).'],
+                    ] as const
+                  ).map(([id, label, blurb]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={state.period === id}
+                      className={state.period === id ? 'look-card active' : 'look-card'}
+                      disabled={periodBusy}
+                      onClick={() => {
+                        if (state.period === id) return
+                        setPeriodBusy(true)
+                        setPeriodError('')
+                        void setPeriod(id as ResetPeriod)
+                          .then((next) => onStateChange(next))
+                          .catch((err) => {
+                            setPeriodError(err instanceof Error ? err.message : 'Could not save period')
+                          })
+                          .finally(() => setPeriodBusy(false))
+                      }}
+                    >
+                      <span className="look-card-title">{label}</span>
+                      <span className="look-card-blurb">{blurb}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </section>
           )}
 
           {section === 'danger' && (
             <section className="settings-section">
-              <p className="section-lead">Reshuffle today&apos;s board or wipe all local bingo data.</p>
+              <p className="section-lead">Reshuffle this board or wipe all local bingo data.</p>
               {dangerError && <p className="error-banner">{dangerError}</p>}
               <div className="danger-actions">
                 <button
@@ -448,7 +490,7 @@ export function SettingsOverlay({
                   disabled={dangerBusy}
                   onClick={() => {
                     const ok = window.confirm(
-                      'This deletes your name, custom terms, session, and wins. Continue?',
+                      'This deletes your name, custom terms, session, wins, and reset period. Continue?',
                     )
                     if (!ok) return
                     setDangerBusy(true)
